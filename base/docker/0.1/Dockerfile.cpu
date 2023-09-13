@@ -22,13 +22,17 @@ ENV LANG=C.UTF-8
 WORKDIR /
 
 # Install python3.9
-RUN apt-get update \
- && apt-get install -y --no-install-recommends software-properties-common \
- && add-apt-repository ppa:deadsnakes/ppa \ 
- && apt-get install -y --no-install-recommends \
-    python=$PYTHON_VERSION \
+RUN apt-get -y update \
+ && apt-get -y upgrade \
+ && apt-get install -y \
+    python${PYTHON_VERSION} \
     ${PYTHON}-pip \
+    python-is-python3 \
  && apt-get clean
+RUN echo 'alias python=python3.9' >> ~/.bashrc
+
 
 # Remove the cache
 RUN rm -rf /root/.cache | true
+
+CMD ["/bin/bash"]
