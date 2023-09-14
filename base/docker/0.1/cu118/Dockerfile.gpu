@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.8.0-base-ubuntu20.04
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
@@ -22,10 +22,19 @@ ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
 ENV PATH /usr/local/bin:$PATH
 
 ENV CUDA_HOME=/usr/local/
+ENV CUDA_TOOLKIT_VERSION=11-8
 ENV CUDNN_VERSION=8.7.0.84
 ENV NCCL_VERSION=2.16.2
 ENV GDRCOPY_VERSION=2.3
 ENV NVIDIA_VERSION=535
+
+# Install necessary system packages
+RUN apt-get -y update \
+ && apt-get -y upgrade \
+ && apt-get install -y \
+    wget \
+    software-properties-common \
+ && apt-get clean
 
 # Install python3.9
 RUN apt-get -y update \
@@ -37,12 +46,27 @@ RUN apt-get -y update \
  && apt-get clean
 RUN echo 'alias python=python3.9' >> ~/.bashrc
 
+
 # Install GPU related packages
 RUN apt-get -y update \
  && apt-get -y upgrade \
- && apt-get install -y \
-    nvidia-driver-${NVIDIA_VERSION}-server \
+ && apt-get install -y cuda-toolkit-${CUDA_TOOLKIT_VERSION} \
  && apt-get clean
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb \
+ && dpkg -i cuda-keyring_1.0-1_all.deb \
+ && sed -i '/developer\.download\.nvidia\.com\/compute\/cuda\/repos/d' /etc/apt/sources.list.d/* \
+ && sed -i '/developer\.download\.nvidia\.com\/compute\/machine-learning\/repos/d' /etc/apt/sources.list.d/* \
+ && add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /" \
+ && apt-get update \
+ && apt-get install -y datacenter-gpu-manager \
+ && apt-get clean
+
+# # Install GPU related packages
+# RUN apt-get -y update \
+#  && apt-get -y upgrade \
+#  && apt-get install -y \
+#     nvidia-driver-${NVIDIA_VERSION}-server \
+#  && apt-get clean
 
 # # Install Nvidia container toolkit
 # RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
